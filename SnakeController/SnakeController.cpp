@@ -63,6 +63,16 @@ Controller::Controller(IPort& p_displayPort, IPort& p_foodPort, IPort& p_scorePo
     }
 }
 
+// void Controller::checkIfLost(Segment newHead, bool lost){
+//        for (auto segment : m_segments) {
+//             if (segment.x == newHead.x and segment.y == newHead.y) {
+//                 m_scorePort.send(std::make_unique<EventT<LooseInd>>());
+//                 lost = true;
+//                 break;
+//             }
+//         }
+// };
+
 void Controller::receive(std::unique_ptr<Event> e)
 {
     try {
@@ -72,7 +82,7 @@ void Controller::receive(std::unique_ptr<Event> e)
 
         Segment newHead;
         newHead.x = currentHead.x + ((m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
-        newHead.y = currentHead.y + (not (m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
+        newHead.y = currentHead.y + (!(m_currentDirection & 0b01) ? (m_currentDirection & 0b10) ? 1 : -1 : 0);
         newHead.ttl = currentHead.ttl;
 
         bool lost = false;
@@ -85,7 +95,7 @@ void Controller::receive(std::unique_ptr<Event> e)
             }
         }
 
-        if (not lost) {
+        if (!lost) {
             if (std::make_pair(newHead.x, newHead.y) == m_foodPosition) {
                 m_scorePort.send(std::make_unique<EventT<ScoreInd>>());
                 m_foodPort.send(std::make_unique<EventT<FoodReq>>());
@@ -96,7 +106,7 @@ void Controller::receive(std::unique_ptr<Event> e)
                 lost = true;
             } else {
                 for (auto &segment : m_segments) {
-                    if (not --segment.ttl) {
+                    if (!--segment.ttl) {
                         DisplayInd l_evt;
                         l_evt.x = segment.x;
                         l_evt.y = segment.y;
@@ -108,7 +118,7 @@ void Controller::receive(std::unique_ptr<Event> e)
             }
         }
 
-        if (not lost) {
+        if (!lost) {
             m_segments.push_front(newHead);
             DisplayInd placeNewHead;
             placeNewHead.x = newHead.x;
@@ -121,7 +131,7 @@ void Controller::receive(std::unique_ptr<Event> e)
                 std::remove_if(
                     m_segments.begin(),
                     m_segments.end(),
-                    [](auto const& segment){ return not (segment.ttl > 0); }),
+                    [](auto const& segment){ return !(segment.ttl > 0); }),
                 m_segments.end());
         }
     } catch (std::bad_cast&) {
